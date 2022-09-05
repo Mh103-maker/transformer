@@ -3,12 +3,12 @@ import math
 from turtle import forward
 import torch
 import torch.nn as nn
-
+import copy
 
 class PositionalEncoding(nn.Module):
     "Implement the PE function."
 
-    def __init__(self, d_model, dropout, max_len=5000):
+    def __init__(self, d_model, dropout, max_len=512):
         super(PositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(p=dropout)
 
@@ -38,13 +38,13 @@ class Embeddings(nn.Module):
 
 
 class TransformerEmbedding(nn.Module):
-    def __init__(self, d_model, vocab, dropout, max_len=5000):
+    def __init__(self, d_model, vocab, dropout):
         """
         param
         """
         super(TransformerEmbedding, self).__init__()
         self.embed=Embeddings(d_model=d_model, vocab= vocab)
-        self.pos=PositionalEncoding(d_model=d_model, dropout=dropout, max_len=max_len)
+        self.pos=PositionalEncoding(d_model=d_model, dropout=dropout)
 
     def forward(self, x):
-        return nn.Sequential(self.embed(x), self.pos(x))
+        return nn.Sequential(self.embed, self.pos)(x)

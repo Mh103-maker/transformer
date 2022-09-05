@@ -4,31 +4,8 @@ from torch.nn import functional
 from torch.utils.data import DataLoader
 import time
 from model.encoderclf import Encoderclf
-from .dataset import create_dataloader
+from dataset import create_dataloader
 
-def train(dataloader):
-    model.train()
-    total_acc, total_count = 0, 0
-    log_interval = 500
-    start_time = time.time()
-    for idx, (label, text) in enumerate(dataloader):
-        optimizer.zero_grad()
-        predicted_label = model.generator(model(text))
-        label = label.type(torch.LongTensor)
-        loss = criterion(predicted_label, label)
-        loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 0.1)
-        optimizer.step()
-        total_loss=loss
-        total_acc += (predicted_label.argmax(1) == label).sum().item()
-        total_count += label.size(0)
-        if idx % log_interval == 0 and idx > 0:
-            elapsed = time.time() - start_time
-            print('| epoch {:3d} | {:5d}/{:5d} batches '
-                  '|loss {:8.3f}| accuracy {:8.3f}'.format(epoch, idx, len(dataloader),total_loss.item()
-                                              total_acc/total_count))
-            total_acc, total_count = 0, 0
-            start_time = time.time()
 
 def evaluate(dataloader):
     model.eval()
@@ -36,7 +13,7 @@ def evaluate(dataloader):
 
     with torch.no_grad():
         for idx, (label, text) in enumerate(dataloader):
-            predicted_label = model.generator(model(text))
+            predicted_label = model.generator(model(text.to(device)))
             label = label.type(torch.LongTensor)
             loss = criterion(predicted_label, label)
             total_acc += (predicted_label.argmax(1) == label).sum().item()
@@ -46,11 +23,14 @@ def evaluate(dataloader):
 def training(args):
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    torch.manual_seed(0)
+    torch.cuda.manual_seed_all(0)
+
     #data
-    train, valid,_, vocab_len= create_dataloader(args.batchsize, args.maxlen)
+    train_dataloader, valid_dataloader,_, vocab_len= create_dataloader(args.batchsize, args.maxlen)
 
     #model init
-    model=Encoderclf(src_vocab=vocab_len,n_class=2, d_model=args.d_model, h=args.h, d_ff=args.d_ff, dropout=args.dropout )
+    model=Encoderclf(src_vocab=vocab_len,n_class=2, d_model=args.d_model, h=args.h, d_ff=args.d_ff,N=args.N, dropout=args.dropout )
 
     for p in model.parameters():
         if p.dim() > 1:
@@ -70,8 +50,42 @@ def training(args):
     #train
     for epoch in range(1, args.epochs+1):
         epoch_start_time= time.time
-        train(train)
-        accu_val = evaluate(valid)
+        model.train()
+        total_acc, total_count = 0, 0
+        log_interval = 500
+        start_time = time.time()
+        for idx, (label, text) in enumerate(train_dataloader):
+            optimizer.zero_grad()
+            predicted_label = model.generator(model(text.to(device)))
+            label = label.type(torch.LongTensor).to(device)
+            loss = criterion(predicted_label, label)
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 0.1)
+            optimizer.step()
+            total_loss=loss
+            total_acc += (predicted_label.argmax(1) == label).sum().item()
+            total_count += label.size(0)
+            if idx % log_interval == 0 and idx > 0:
+                elapsed = time.time() - start_time
+                print('| epoch {:3d} | {:5d}/{:5d} batches '
+                    '|loss {:8.3f}| accuracy {:8.3f}'.format(epoch, idx, len(train_dataloader),total_loss.item(),
+                                                total_acc/total_count))
+                total_acc, total_count = 0, 0
+                start_time = time.time()
+
+        model.eval()
+        total_acc, total_count = 0, 0
+
+        with torch.no_grad():
+            for idx, (label, text) in enumerate(valid_dataloader):
+                predicted_label = model.generator(model(text.to(device)))
+                label = label.type(torch.LongTensor).to(device)
+                loss = criterion(predicted_label, label)
+                total_acc += (predicted_label.argmax(1) == label).sum().item()
+                total_count += label.size(0)
+        accu_val=total_acc/total_count
+
+
         if total_accu is not None and total_accu > accu_val:
             scheduler.step()
         else:

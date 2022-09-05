@@ -43,13 +43,13 @@ class Generator(nn.Module):
         self.proj = nn.Linear(d_model,n_class)
 
     def forward(self, x):
-        print("transformer 결과",x.size())
+        #print("transformer 결과",x.size())
         x= x.mean(dim=1) # batch ,d_model
-        print("평균결과",x.size())
+        #print("평균결과",x.size())
         x=self.proj(x) # batch, n_class
-        print("proj결과",x.size())
+        #print("proj결과",x.size())
         x=log_softmax(x,dim=-1)
-        print("softmax결과",x.size())
+        #print("softmax결과",x.size())
         return x # batch, n_class
 
 ############

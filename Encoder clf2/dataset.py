@@ -6,11 +6,13 @@ from torchtext.data.functional import to_map_style_dataset
 from torch.utils.data.dataset import random_split
 from torch.utils.data import DataLoader
 from torchtext.vocab import build_vocab_from_iterator
-
+import random
+import numpy as np
 
 tokenizer=get_tokenizer('basic_english')
 train_iter = IMDB(split='train')
-
+np.random.seed(0)
+random.seed(0)
 # tokening
 def yield_tokens(data_iter):
     for _, text in data_iter:
@@ -32,8 +34,8 @@ def collate_batch(
 ):
     label_list, text_list = [], []
     for (_label, _text) in batch:
-         label_list.append(torch.tensor(label_pipeline(_label), dtype=torch.int))
-         processed_text = torch.tensor(text_pipeline(_text), dtype=torch.int )
+         label_list.append(torch.tensor(label_pipeline(_label)))
+         processed_text = torch.tensor(text_pipeline(_text))
          text_list.append(
                pad(
                 processed_text,
@@ -49,7 +51,7 @@ def collate_batch(
     return (tgt, src)
 
 
-def dataloader(
+def create_dataloader(
     batch_size,
     max_padding,
 ):
@@ -57,8 +59,6 @@ def dataloader(
         return collate_batch(
             
             batch,
-            text_pipeline,
-            label_pipeline,
             max_padding=max_padding,
             pad_id=vocab_src.get_stoi()['<blank>'],
         )
