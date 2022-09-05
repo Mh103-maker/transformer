@@ -1,7 +1,6 @@
 
 import  argparse
-from train import training, test
-
+from train import training
 def main(args):
 
     if args.training:
@@ -24,7 +23,7 @@ if __name__=='__main__':
     parser.add_argument('--batchsize', default=64, type=int)
     parser.add_argument('--maxlen', default=128, type=int)
     parser.add_argument('--lr', default=1e-3, type=int)
-    parser.add_argument('--epochs', default=10, type=int)
+    parser.add_argument('--epochs', default=5, type=int)
     args= parser.parse_args()
 
 
