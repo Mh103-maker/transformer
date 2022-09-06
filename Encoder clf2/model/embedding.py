@@ -14,17 +14,18 @@ class PositionalEncoding(nn.Module):
 
         # Compute the positional encodings once in log space.
         pe = torch.zeros(max_len, d_model)
-        position = torch.arange(0, max_len).unsqueeze(1)
+        position = torch.arange(0, max_len).unsqueeze(1) # [max_len,1]
         div_term = torch.exp(
-            torch.arange(0, d_model, 2) * -(math.log(10000.0) / d_model)
+            torch.arange(0, d_model, 2) * -(math.log(10000.0) / d_model) #[d_model/2] exp(((2*d/2)/d_model)*log(1/100000) )
         )
+        #[max_len, d_model/2]
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
         pe = pe.unsqueeze(0)
-        self.register_buffer("pe", pe)
+        self.register_buffer("pe", pe) #backprop 하지 않음
 
     def forward(self, x):
-        x = x + self.pe[:, : x.size(1)].requires_grad_(False)
+        x = x + self.pe[:, : x.size(1)].requires_grad_(False) #emb 과 길이 맞게 (seq_len) 잘라서 pos+emb
         return self.dropout(x)
 
 class Embeddings(nn.Module):
@@ -47,4 +48,4 @@ class TransformerEmbedding(nn.Module):
         self.pos=PositionalEncoding(d_model=d_model, dropout=dropout)
 
     def forward(self, x):
-        return nn.Sequential(self.embed, self.pos)(x)
+        return nn.Sequential(self.embed, self.pos)(x) #nn.sequential 순차적으로 진행

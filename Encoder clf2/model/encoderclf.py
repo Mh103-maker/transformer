@@ -8,7 +8,7 @@ import copy
 
 from .embedding import TransformerEmbedding
 
-# clone layer
+# clone layer 레이어 수 만큼 복사
 def clones(module, N):
     
     return nn.ModuleList([copy.deepcopy(module) for _ in range(N)])
@@ -43,7 +43,7 @@ class Generator(nn.Module):
         self.proj = nn.Linear(d_model,n_class)
 
     def forward(self, x):
-        #print("transformer 결과",x.size())
+        #print("transformer 결과",x.size()) #batch, seq_len, d_model
         x= x.mean(dim=1) # batch ,d_model
         #print("평균결과",x.size())
         x=self.proj(x) # batch, n_class
@@ -57,7 +57,7 @@ class Encoder(nn.Module):
 
     def __init__(self, layer, N):
         super(Encoder,self).__init__()
-        self.layers=clones(layer,N)
+        self.layers=clones(layer,N) #encoder layer N개만큼
         self.norm=LayerNorm(layer.size) #layer.size=d_model
 
     def forward(self, x):
@@ -77,7 +77,7 @@ class LayerNorm(nn.Module):
         self.eps = eps
 
     def forward(self, x):
-        mean = x.mean(-1, keepdim=True) 
+        mean = x.mean(-1, keepdim=True)  #d_model
         std = x.std(-1, keepdim=True) 
         return self.a_2 * (x - mean) / (std + self.eps) + self.b_2
 
@@ -102,7 +102,7 @@ class EncoderLayer(nn.Module):
 
     def __init__(self, size, self_attn, feed_forward, dropout):
         super(EncoderLayer, self).__init__()
-        self.self_attn = self_attn
+        self.self_attn = self_attn #Multiheadattention 예정
         self.feed_forward = feed_forward
         self.sublayer = clones(SublayerConnection(size, dropout), 2)
         self.size = size
@@ -176,4 +176,4 @@ class PositionwiseFeedForward(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
-        return self.w_2(self.dropout(self.w_1(x).relu()))    
+        return self.w_2(self.dropout(self.w_1(x).relu()))    #max(0,xW_1+b_1)W_2 +b_2

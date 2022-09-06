@@ -5,8 +5,7 @@ def main(args):
 
     if args.training:
         training(args)
-    if args.test:
-        test(args)
+
 
 if __name__=='__main__':
     

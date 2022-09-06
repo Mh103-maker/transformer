@@ -7,18 +7,6 @@ from model.encoderclf import Encoderclf
 from dataset import create_dataloader
 
 
-def evaluate(dataloader):
-    model.eval()
-    total_acc, total_count = 0, 0
-
-    with torch.no_grad():
-        for idx, (label, text) in enumerate(dataloader):
-            predicted_label = model.generator(model(text.to(device)))
-            label = label.type(torch.LongTensor)
-            loss = criterion(predicted_label, label)
-            total_acc += (predicted_label.argmax(1) == label).sum().item()
-            total_count += label.size(0)
-    return total_acc/total_count
 
 def training(args):
     
@@ -32,6 +20,7 @@ def training(args):
     #model init
     model=Encoderclf(src_vocab=vocab_len,n_class=2, d_model=args.d_model, h=args.h, d_ff=args.d_ff,N=args.N, dropout=args.dropout )
 
+    # xavier 초기화
     for p in model.parameters():
         if p.dim() > 1:
             nn.init.xavier_uniform_(p)
@@ -44,7 +33,7 @@ def training(args):
     optimizer = torch.optim.Adam(
         (p for p in model.parameters() if p.requires_grad), lr=lr
     )
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=0.1)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=0.1) #일정 step 마다 lr에 gamma 곱
     total_accu=0.6
 
     #train
@@ -61,7 +50,7 @@ def training(args):
             label = label.type(torch.LongTensor).to(device)
             loss = criterion(predicted_label, label)
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 0.1)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 0.1) #exploding 방지 일정 threshold 넘어가면 clipping
             optimizer.step()
             total_loss=loss
             total_acc += (predicted_label.argmax(1) == label).sum().item()

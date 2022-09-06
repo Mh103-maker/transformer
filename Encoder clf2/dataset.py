@@ -11,9 +11,9 @@ import numpy as np
 
 tokenizer=get_tokenizer('basic_english')
 train_iter = IMDB(split='train')
-np.random.seed(0)
-random.seed(0)
+
 # tokening
+
 def yield_tokens(data_iter):
     for _, text in data_iter:
         yield tokenizer(text) 
@@ -38,7 +38,7 @@ def collate_batch(
          processed_text = torch.tensor(text_pipeline(_text))
          text_list.append(
                pad(
-                processed_text,
+                processed_text,      ##더 길면 자르고 짧으면 pad_id([<black>])idx로 패딩
                 (
                     0,
                     max_padding - len(processed_text),
@@ -55,6 +55,8 @@ def create_dataloader(
     batch_size,
     max_padding,
 ):
+    np.random.seed(0)
+    random.seed(0)
     def collate_fn(batch):
         return collate_batch(
             

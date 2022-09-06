@@ -5,6 +5,7 @@ import math
 import copy
 from .Embedding import PositionalEncoding, Embeddings
 
+
 class Generator(nn.Module):
     "Define standard linear + softmax generation step."
 
